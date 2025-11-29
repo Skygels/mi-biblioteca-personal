@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Biblioteca - Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Header Simple -->
+    <header class="header">
+        <div class="container">
+            <h1>📚 Mi Biblioteca Personal</h1>
+            <nav>
+                <button onclick="mostrarSeccion('inicio')">Inicio</button>
+                <button onclick="mostrarSeccion('agregar')">Agregar</button>
+                <button onclick="mostrarSeccion('coleccion')">Ver Colección</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Sección Inicio -->
+    <section id="inicio" class="section">
+        <div class="container">
+            <h2>Bienvenido a tu Biblioteca Personal</h2>
+            <p>Gestiona tus libros, series, películas y música.</p>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <h3 id="total-elementos">0</h3>
+                    <p>Elementos totales</p>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <button class="action-btn" onclick="mostrarSeccion('agregar')">
+                    ➕ Agregar Elemento
+                </button>
+                <button class="action-btn" onclick="cargarColeccion()">
+                    📋 Ver Mi Colección
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Agregar -->
+    <section id="agregar" class="section hidden">
+        <div class="container">
+            <h2>Agregar Nuevo Elemento</h2>
+            
+            <form id="form-agregar" onsubmit="agregarElemento(event)">
+                <div class="form-group">
+                    <label>Tipo:</label>
+                    <select id="tipo" name="tipo">
+                        <option value="libro">Libro</option>
+                        <option value="serie">Serie</option>
+                        <option value="pelicula">Película</option>
+                        <option value="musica">Música</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Título *:</label>
+                    <input type="text" id="titulo" name="titulo" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Autor/Artista:</label>
+                    <input type="text" id="autor" name="autor">
+                </div>
+
+                <div class="form-group">
+                    <label>Género:</label>
+                    <input type="text" id="genero" name="genero">
+                </div>
+
+                <div class="form-group">
+                    <label>Año:</label>
+                    <input type="number" id="anio" name="anio" min="1900" max="2030">
+                </div>
+
+                <div class="form-group">
+                    <label>Calificación (0-5):</label>
+                    <input type="number" id="calificacion" name="calificacion" min="0" max="5" value="0">
+                </div>
+
+                <button type="submit" class="btn-primary">💾 Guardar Elemento</button>
+            </form>
+
+            <div id="mensaje" class="mensaje"></div>
+        </div>
+    </section>
+
+    <!-- Sección Colección -->
+    <section id="coleccion" class="section hidden">
+        <div class="container">
+            <h2>Mi Colección</h2>
+            <button onclick="cargarColeccion()">🔄 Actualizar</button>
+            
+            <div id="lista-coleccion" class="coleccion-lista">
+                <!-- Los elementos aparecerán aquí -->
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Estado de la aplicación
+        let elementos = [];
+
+        // Navegación entre secciones
+        function mostrarSeccion(seccionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(seccionId).classList.remove('hidden');
+        }
+
+        // Agregar elemento
+        async function agregarElemento(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const elemento = {
+                tipo: document.getElementById('tipo').value,
+                titulo: document.getElementById('titulo').value,
+                autor: document.getElementById('autor').value,
+                genero: document.getElementById('genero').value,
+                anio: document.getElementById('anio').value,
+                calificacion: parseInt(document.getElementById('calificacion').value)
+            };
+
+            try {
+                const response = await fetch('/api/agregar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(elemento)
+                });
+
+                const resultado = await response.json();
+                
+                if (resultado.success) {
+                    document.getElementById('mensaje').textContent = '✅ ' + resultado.mensaje;
+                    document.getElementById('mensaje').className = 'mensaje success';
+                    event.target.reset();
+                    
+                    // Actualizar estadísticas
+                    cargarEstadisticas();
+                } else {
+                    document.getElementById('mensaje').textContent = '❌ ' + resultado.mensaje;
+                    document.getElementById('mensaje').className = 'mensaje error';
+                }
+            } catch (error) {
+                document.getElementById('mensaje').textContent = '❌ Error de conexión';
+                document.getElementById('mensaje').className = 'mensaje error';
+            }
+        }
+
+        // Cargar colección
+        async function cargarColeccion() {
+            try {
+                const response = await fetch('/api/elementos');
+                elementos = await response.json();
+                
+                const contenedor = document.getElementById('lista-coleccion');
+                
+                if (elementos.length === 0) {
+                    contenedor.innerHTML = '<p>No hay elementos en tu colección.</p>';
+                    return;
+                }
+
+                contenedor.innerHTML = elementos.map(elemento => `
+                    <div class="elemento-card">
+                        <h3>${elemento.titulo}</h3>
+                        <p><strong>Tipo:</strong> ${elemento.tipo}</p>
+                        <p><strong>Autor:</strong> ${elemento.autor || 'No especificado'}</p>
+                        <p><strong>Género:</strong> ${elemento.genero || 'No especificado'}</p>
+                        <p><strong>Año:</strong> ${elemento.anio || 'No especificado'}</p>
+                        <p><strong>Calificación:</strong> ${'⭐'.repeat(elemento.calificacion)}</p>
+                    </div>
+                `).join('');
+                
+                cargarEstadisticas();
+                
+            } catch (error) {
+                console.error('Error cargando colección:', error);
+            }
+        }
+
+        // Cargar estadísticas
+        function cargarEstadisticas() {
+            document.getElementById('total-elementos').textContent = elementos.length;
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarEstadisticas();
+        });
+    </script>
+</body>
+</html>

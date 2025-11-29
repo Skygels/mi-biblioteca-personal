@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "tipo": "libro",
+    "titulo": "MANACLED",
+    "autor": "SELINYU",
+    "genero": "ROMANCE",
+    "anio": "2019",
+    "calificacion": 5
+  }
+]
