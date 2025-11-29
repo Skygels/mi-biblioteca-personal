@@ -64,7 +64,7 @@ Este proyecto fue desarrollado como parte del la materia de ProgramacioI-sis-112
 
 ## 🌐 Demo en Vivo
 
-**URL del sitio desplegado**: [Próximamente...](#)
+**URL del sitio desplegado**: [(http://127.0.0.1:5000/)](#)
 
 **Credenciales de prueba**:
 - Usuario: `aun no necesario`
